@@ -51,49 +51,48 @@ object Grisu {
 
   def toString(value: Double, writer: Writer) {
     if (value < 0.0) {
-      writer.write('-');
+      writer.write('-')
       return toString(-value, writer)
     }
 
-    val grisuDouble = new GrisuDouble(value);
+    val grisuDouble = new GrisuDouble(value)
     if (grisuDouble.isSpecial) {
-      return handleSpecialValues(grisuDouble, writer);
+      return handleSpecialValues(grisuDouble, writer)
     }
 
-    val decimal_rep = ts_decimal_rep.get();
+    val decimal_rep = ts_decimal_rep.get()
 
     val intBoxes = new IntBoxes
     if (!doubleToShortestAscii(grisuDouble, decimal_rep, intBoxes)) {
-      writer.write(value.toString)
-      return;
+      return writer.write(value.toString)
     }
     val decimal_rep_length = intBoxes.a
     val decimal_point = intBoxes.b
 
-    var decimalRepLength = decimal_rep_length;
+    var decimalRepLength = decimal_rep_length
     if (decimal_point < 1) {
-      decimalRepLength += -decimal_point + 1;
+      decimalRepLength += -decimal_point + 1
     } else if (decimal_point >= decimal_rep_length) {
-      decimalRepLength += decimal_point - decimal_rep_length + 1;
+      decimalRepLength += decimal_point - decimal_rep_length + 1
     }
 
-    val exponent = decimal_point - 1;
-    val absExponent = Math.abs(exponent);
-    var exponentRepLength = decimal_rep_length + 3;
-    if (exponent < 0) exponentRepLength += 1;
+    val exponent = decimal_point - 1
+    val absExponent = Math.abs(exponent)
+    var exponentRepLength = decimal_rep_length + 3
+    if (exponent < 0) exponentRepLength += 1
     if (absExponent >= 10) {
-      exponentRepLength += 1;
-      if (absExponent >= 100) exponentRepLength += 1;
+      exponentRepLength += 1
+      if (absExponent >= 100) exponentRepLength += 1
     }
 
     if (decimalRepLength <= exponentRepLength) {
       createDecimalRepresentation(decimal_rep, decimal_rep_length,
                                   decimal_point,
                                   Math.max(0, decimal_rep_length - decimal_point),
-                                  writer);
+                                  writer)
     } else {
       createExponentialRepresentation(decimal_rep, decimal_rep_length, exponent,
-                                      writer);
+                                      writer)
     }
   }
 
@@ -103,47 +102,44 @@ object Grisu {
   // kBase10MaximalLength.
   // Note that DoubleToAscii null-terminates its input. So the given buffer
   // should be at least kBase10MaximalLength + 1 characters long.
-  final val kBase10MaximalLength = 17;
+  private final val kBase10MaximalLength = 17
 
-  final val infinity_symbol = "Infinity";
-  final val nan_symbol = "NaN";
-  final val exponent_character = 'e';
+  private final val infinity_symbol = "Infinity"
+  private final val nan_symbol = "NaN"
+  private final val exponent_character = 'e'
 
   private def handleSpecialValues(double_inspect: GrisuDouble,
                                   writer: Writer): Unit =
   {
     if(double_inspect.isInfinite) {
       if(double_inspect.toDouble < 0) {
-        writer.write('-');
+        writer.write('-')
       }
-      writer.write(infinity_symbol);
-      return;
-    }
-    if(double_inspect.isNaN) {
-      writer.write(nan_symbol);
-      return;
+      writer.write(infinity_symbol)
+    } else if(double_inspect.isNaN) {
+      writer.write(nan_symbol)
     }
   }
 
   // intBoxes is (length, point)
   private def doubleToShortestAscii(v: GrisuDouble, buffer: Array[Char], intBoxes: IntBoxes): Boolean = {
-    assert(!v.isSpecial);
-    assert(v.toDouble >= 0.0);
+    assert(!v.isSpecial)
+    assert(v.toDouble >= 0.0)
 
-    val value = v.toDouble;
+    val value = v.toDouble
 
     if (value == 0.0) {
-      buffer(0) = '0';
-      buffer(1) = 0.toChar;
-      intBoxes.a = 1;
-      intBoxes.b = 1;
-      return true;
+      buffer(0) = '0'
+      buffer(1) = 0.toChar
+      intBoxes.a = 1
+      intBoxes.b = 1
+      true
+    } else {
+      val result = Grisu3(v, buffer, intBoxes)
+      if (result) intBoxes.b += intBoxes.a
+      else intBoxes.b = 0
+      result
     }
-
-    val result = Grisu3(v, buffer, intBoxes);
-    if (result) intBoxes.b += intBoxes.a
-    else intBoxes.b = 0;
-    return result;
   }
 
   // The minimal and maximal target exponent define the range of w's binary
@@ -152,8 +148,8 @@ object Grisu {
   //
   // A different range might be chosen on a different platform, to optimize digit
   // generation, but a smaller range requires more powers of ten to be cached.
-  final val kMinimalTargetExponent = -60;
-  final val kMaximalTargetExponent = -32;
+  private final val kMinimalTargetExponent = -60
+  private final val kMaximalTargetExponent = -32
 
   // Provides a decimal representation of v.
   // Returns true if it succeeds, otherwise the result cannot be trusted.
@@ -170,24 +166,24 @@ object Grisu {
                      buffer: Array[Char],
                      intBoxes: IntBoxes): Boolean =
   {
-    val w = v.asNormalizedDiyFp;
+    val w = v.asNormalizedDiyFp
     // boundary_minus and boundary_plus are the boundaries between v and its
     // closest floating-point neighbors. Any number strictly between
     // boundary_minus and boundary_plus will round to v when convert to a double.
     // Grisu3 will never output representations that lie exactly on a boundary.
-    val (boundary_minus, boundary_plus) = v.normalizedBoundaries;
-    assert(boundary_plus.e == w.e);
+    val (boundary_minus, boundary_plus) = v.normalizedBoundaries
+    assert(boundary_plus.e == w.e)
     val ten_mk_minimal_binary_exponent =
-      kMinimalTargetExponent - (w.e + DiyFp.kSignificandSize);
+      kMinimalTargetExponent - (w.e + DiyFp.kSignificandSize)
     val ten_mk_maximal_binary_exponent =
-      kMaximalTargetExponent - (w.e + DiyFp.kSignificandSize);
+      kMaximalTargetExponent - (w.e + DiyFp.kSignificandSize)
     val PowersOfTenCache.ResultBox(ten_mk, mk) = PowersOfTenCache.cachedPowerForBinaryExponentRange(
         ten_mk_minimal_binary_exponent,
-        ten_mk_maximal_binary_exponent);
+        ten_mk_maximal_binary_exponent)
     assert((kMinimalTargetExponent <= w.e + ten_mk.e +
               DiyFp.kSignificandSize) &&
              (kMaximalTargetExponent >= w.e + ten_mk.e +
-                DiyFp.kSignificandSize));
+                DiyFp.kSignificandSize))
 
     // Note that ten_mk is only an approximation of 10^-k. A DiyFp only contains a
     // 64 bit significand and ten_mk is thus only precise up to 64 bits.
@@ -198,18 +194,15 @@ object Grisu {
     // In fact: scaled_w - w*10^k < 1ulp (unit in the last place) of scaled_w.
     // In other words: let f = scaled_w.f() and e = scaled_w.e(), then
     //           (f-1) * 2^e < w*10^k < (f+1) * 2^e
-    //DiyFp scaled_w = DiyFp.Times(ref w, ref ten_mk);
     w *= ten_mk
-    assert(w.e == boundary_plus.e + ten_mk.e + DiyFp.kSignificandSize);
+    assert(w.e == boundary_plus.e + ten_mk.e + DiyFp.kSignificandSize)
     // In theory it would be possible to avoid some recomputations by computing
     // the difference between w and boundary_minus/plus (a power of 2) and to
     // compute scaled_boundary_minus/plus by subtracting/adding from
     // scaled_w. However the code becomes much less readable and the speed
     // enhancements are not terriffic.
-    //DiyFp scaled_boundary_minus = DiyFp.Times(ref boundary_minus, ref ten_mk);
-    boundary_minus *= ten_mk;
-    //DiyFp scaled_boundary_plus = DiyFp.Times(ref boundary_plus, ref ten_mk);
-    boundary_plus *= ten_mk;
+    boundary_minus *= ten_mk
+    boundary_plus *= ten_mk
 
     // DigitGen will generate the digits of scaled_w. Therefore we have
     // v == (double) (scaled_w * 10^-mk).
@@ -218,9 +211,9 @@ object Grisu {
     // the buffer will be filled with "123" und the decimal_exponent will be
     // decreased by 2.
     val result = digitGen(boundary_minus, w, boundary_plus,
-                          buffer, intBoxes);
-    intBoxes.b = -mk + intBoxes.b;
-    return result;
+                          buffer, intBoxes)
+    intBoxes.b = -mk + intBoxes.b
+    result
   }
 
   // Generates the digits of input number w.
@@ -271,9 +264,9 @@ object Grisu {
                        buffer: Array[Char],
                        intBoxes: IntBoxes): Boolean = // intBoxes is (length, kappa)
   {
-    assert(low.e == w.e && w.e == high.e);
-    assert(low.f + ULong(1) <= high.f - ULong(1));
-    assert(kMinimalTargetExponent <= w.e && w.e <= kMaximalTargetExponent);
+    assert(low.e == w.e && w.e == high.e)
+    assert(low.f + ULong(1) <= high.f - ULong(1))
+    assert(kMinimalTargetExponent <= w.e && w.e <= kMaximalTargetExponent)
     // low, w and high are imprecise, but by less than one ulp (unit in the last
     // place).
     // If we remove (resp. add) 1 ulp from low (resp. high) we are certain that
@@ -285,9 +278,9 @@ object Grisu {
     // We will now start by generating the digits within the uncertain
     // interval. Later we will weed out representations that lie outside the safe
     // interval and thus _might_ lie outside the correct interval.
-    var unit = ULong(1L);
-    val too_low = new DiyFp(low.f - unit, low.e);
-    val too_high = new DiyFp(high.f + unit, high.e);
+    var unit = ULong(1L)
+    val too_low = new DiyFp(low.f - unit, low.e)
+    val too_high = new DiyFp(high.f + unit, high.e)
     // too_low and too_high are guaranteed to lie outside the interval we want the
     // generated number in.
     val unsafe_interval = too_high - too_low
@@ -298,11 +291,11 @@ object Grisu {
     // such that:   too_low < buffer * 10^kappa < too_high
     // We use too_high for the digit_generation and stop as soon as possible.
     // If we stop early we effectively round down.
-    val one = new DiyFp(ULong(1L) << -w.e, w.e);
+    val one = new DiyFp(ULong(1L) << -w.e, w.e)
     // Division by one is a shift.
-    var integrals = UInt((too_high.f >> -one.e).toInt);
+    var integrals = UInt((too_high.f >> -one.e).toInt)
     // Modulo by one is an and.
-    var fractionals = too_high.f & (one.f - ULong(1));
+    var fractionals = too_high.f & (one.f - ULong(1))
 
     biggestPowerTen(integrals, DiyFp.kSignificandSize - (-one.e), intBoxes)
     var divisor = UInt(intBoxes.a)
@@ -313,16 +306,16 @@ object Grisu {
     // The invariant holds for the first iteration: kappa has been initialized
     // with the divisor exponent + 1. And the divisor is the biggest power of ten
     // that is smaller than integrals.
-    var unsafeIntervalF = unsafe_interval.f;
+    var unsafeIntervalF = unsafe_interval.f
     while(kappa > 0) {
-      val digit = (integrals / divisor).toInt;
-      buffer(length) = ('0' + digit).toChar;
-      length += 1;
-      integrals %= divisor;
-      kappa -= 1;
+      val digit = (integrals / divisor).toInt
+      buffer(length) = ('0' + digit).toChar
+      length += 1
+      integrals %= divisor
+      kappa -= 1
       // Note that kappa now equals the exponent of the divisor and that the
       // invariant thus holds again.
-      val rest = (ULong(integrals.toLong) << -one.e) + fractionals;
+      val rest = (ULong(integrals.toLong) << -one.e) + fractionals
       // Invariant: too_high = buffer * 10^kappa + DiyFp(rest, one.e())
       // Reminder: unsafe_interval.e() == one.e()
       if(rest < unsafeIntervalF) {
@@ -333,9 +326,9 @@ object Grisu {
         intBoxes.b = kappa
         return roundWeed(buffer, length, too_high.f,
                          unsafeIntervalF, rest,
-                         ULong(divisor.toLong) << -one.e, unit);
+                         ULong(divisor.toLong) << -one.e, unit)
       }
-      divisor /= UInt(10);
+      divisor /= UInt(10)
     }
 
     // The integrals have been generated. We are at the point of the decimal
@@ -344,28 +337,26 @@ object Grisu {
     // data (like the interval or 'unit'), too.
     // Note that the multiplication by 10 does not overflow, because w.e >= -60
     // and thus one.e >= -60.
-    assert(one.e >= -60);
-    assert(fractionals < one.f);
-    assert(ULong(-1L) / ULong(10) >= one.f);
-    while (true) {
-      fractionals *= ULong(10L);
-      unit *= ULong(10L);
-      unsafe_interval.f *= ULong(10);
+    assert(one.e >= -60)
+    assert(fractionals < one.f)
+    assert(ULong(-1L) / ULong(10) >= one.f)
+    do {
+      fractionals *= ULong(10L)
+      unit *= ULong(10L)
+      unsafe_interval.f *= ULong(10)
       // Integer division by one.
-      val digit = (fractionals >> -one.e).toInt;
-      buffer(length) = ('0' + digit).toChar;
-      length += 1;
-      fractionals &= one.f - ULong(1);  // Modulo by one.
-      kappa -= 1;
-      if (fractionals < unsafe_interval.f) {
-        too_high -= w
-        intBoxes.a = length
-        intBoxes.b = kappa
-        return roundWeed(buffer, length, too_high.f * unit,
-                         unsafe_interval.f, fractionals, one.f, unit);
-      }
-    }
-    sys.error("Can't get here")
+      val digit = (fractionals >> -one.e).toInt
+      buffer(length) = ('0' + digit).toChar
+      length += 1
+      fractionals &= one.f - ULong(1)  // Modulo by one.
+        kappa -= 1
+    } while(fractionals >= unsafe_interval.f)
+
+    too_high -= w
+    intBoxes.a = length
+    intBoxes.b = kappa
+    roundWeed(buffer, length, too_high.f * unit,
+              unsafe_interval.f, fractionals, one.f, unit)
   }
 
   // Returns the biggest power of ten that is less than or equal to the given
@@ -381,28 +372,28 @@ object Grisu {
   // http://graphics.stanford.edu/~seander/bithacks.html#IntegerLog10
   private final val kSmallPowersOfTenS = Array[Int](
       0, 1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000
-    );
+    )
   private def kSmallPowersOfTen(i: Int) = UInt(kSmallPowersOfTenS(i))
 
   def biggestPowerTen(number: UInt,
                       number_bits: Int,
                       intBoxes: IntBoxes) // intBoxes is power.toInt, exponent_plus_one
   {
-    assert(number < (UInt(1) << (number_bits + 1)));
+    assert(number < (UInt(1) << (number_bits + 1)))
     // 1233/4096 is approximately 1/lg(10).
-    var exponent_plus_one_guess = ((number_bits + 1) * 1233 >> 12);
+    var exponent_plus_one_guess = ((number_bits + 1) * 1233 >> 12)
     // We increment to skip over the first entry in the kPowersOf10 table.
     // Note: kPowersOf10[i] == 10^(i-1).
-    exponent_plus_one_guess += 1;
+    exponent_plus_one_guess += 1
     // We don't have any guarantees that 2^number_bits <= number.
     // TODO(floitsch): can we change the 'while' into an 'if'? We definitely see
     // number < (2^number_bits - 1), but I haven't encountered
     // number < (2^number_bits - 2) yet.
     while (number < kSmallPowersOfTen(exponent_plus_one_guess)) {
-      exponent_plus_one_guess-=1;
+      exponent_plus_one_guess -= 1
     }
-    intBoxes.a = kSmallPowersOfTenS(exponent_plus_one_guess);
-    intBoxes.b = exponent_plus_one_guess;
+    intBoxes.a = kSmallPowersOfTenS(exponent_plus_one_guess)
+    intBoxes.b = exponent_plus_one_guess
   }
 
   // Adjusts the last digit of the generated number, and screens out generated
@@ -429,8 +420,8 @@ object Grisu {
                 unit: ULong): Boolean =
   {
     var rest = rest_
-    val small_distance = distance_too_high_w - unit;
-    val big_distance = distance_too_high_w + unit;
+    val small_distance = distance_too_high_w - unit
+    val big_distance = distance_too_high_w + unit
     // Let w_low  = too_high - big_distance, and
     //     w_high = too_high - small_distance.
     // Note: w_low < w < w_high
@@ -502,14 +493,14 @@ object Grisu {
     // Conceptually rest ~= too_high - buffer
     // We need to do the following tests in this order to avoid over- and
     // underflows.
-    assert(rest <= unsafe_interval);
+    assert(rest <= unsafe_interval)
     while (rest < small_distance &&  // Negated condition 1
              unsafe_interval - rest >= ten_kappa &&  // Negated condition 2
              (rest + ten_kappa < small_distance ||  // buffer{-1} > w_high
                 small_distance - rest >= rest + ten_kappa - small_distance))
     {
-      buffer(length - 1) = (buffer(length - 1) - 1).toChar;
-      rest += ten_kappa;
+      buffer(length - 1) = (buffer(length - 1) - 1).toChar
+      rest += ten_kappa
     }
 
     // We have approached w+ as much as possible. We now test if approaching w-
@@ -520,7 +511,7 @@ object Grisu {
           (rest + ten_kappa < big_distance ||
              big_distance - rest > rest + ten_kappa - big_distance))
     {
-      return false;
+      return false
     }
 
     // Weeding test.
@@ -528,7 +519,7 @@ object Grisu {
     //   Since too_low = too_high - unsafe_interval this is equivalent to
     //      [too_high - unsafe_interval + 4 ulp; too_high - 2 ulp]
     //   Conceptually we have: rest ~= too_high - buffer
-    return (ULong(2) * unit <= rest) && (rest <= unsafe_interval - ULong(4) * unit);
+    return (ULong(2) * unit <= rest) && (rest <= unsafe_interval - ULong(4) * unit)
   }
 
   private def createDecimalRepresentation(decimal_digits: Array[Char],
@@ -540,33 +531,33 @@ object Grisu {
     // Create a representation that is padded with zeros if needed.
     if (decimal_point <= 0) {
       // "0.00000decimal_rep".
-      writer.write('0');
+      writer.write('0')
       if (digits_after_point > 0) {
-        writer.write('.');
-        writer.write("0" * (-decimal_point));
-        assert(length <= digits_after_point - (-decimal_point));
-        writer.write(decimal_digits, 0, length);
-        val remaining_digits = digits_after_point - (-decimal_point) - length;
+        writer.write('.')
+        writer.write("0" * (-decimal_point))
+        assert(length <= digits_after_point - (-decimal_point))
+        writer.write(decimal_digits, 0, length)
+        val remaining_digits = digits_after_point - (-decimal_point) - length
         writer.write("0" * remaining_digits)
       }
     } else if (decimal_point >= length) {
       // "decimal_rep0000.00000" or "decimal_rep.0000"
-      writer.write(decimal_digits, 0, length);
-      writer.write("0" * (decimal_point - length));
+      writer.write(decimal_digits, 0, length)
+      writer.write("0" * (decimal_point - length))
       if (digits_after_point > 0) {
-        writer.write('.');
+        writer.write('.')
         writer.write("0" * digits_after_point)
       }
     } else {
       // "decima.l_rep000"
-      assert(digits_after_point > 0);
-      writer.write(decimal_digits, 0, decimal_point);
-      writer.write('.');
-      assert(length - decimal_point <= digits_after_point);
+      assert(digits_after_point > 0)
+      writer.write(decimal_digits, 0, decimal_point)
+      writer.write('.')
+      assert(length - decimal_point <= digits_after_point)
       writer.write(decimal_digits, decimal_point,
-                    length - decimal_point);
-      val remaining_digits = digits_after_point - (length - decimal_point);
-      writer.write("0" * remaining_digits);
+                    length - decimal_point)
+      val remaining_digits = digits_after_point - (length - decimal_point)
+      writer.write("0" * remaining_digits)
     }
   }
 
@@ -576,34 +567,34 @@ object Grisu {
                                               writer: Writer): Unit =
   {
     var exponent = exponent_
-    assert(length != 0);
-    writer.write(decimal_digits(0));
+    assert(length != 0)
+    writer.write(decimal_digits(0))
     if (length != 1)
     {
-      writer.write('.');
-      writer.write(decimal_digits, 1, length - 1);
+      writer.write('.')
+      writer.write(decimal_digits, 1, length - 1)
     }
-    writer.write(exponent_character);
+    writer.write(exponent_character)
     if (exponent < 0) {
-      writer.write('-');
-      exponent = -exponent;
+      writer.write('-')
+      exponent = -exponent
     } else if (exponent == 0) {
-      writer.write('0');
-      return;
+      writer.write('0')
+      return
     }
-    assert(exponent < 10000);
+    assert(exponent < 10000)
     if (exponent >= 100) {
-      writer.write(('0' + exponent / 100).toChar);
-      exponent %= 100;
-      writer.write(('0' + exponent / 10).toChar);
-      exponent %= 10;
-      writer.write(('0' + exponent).toChar);
+      writer.write(('0' + exponent / 100).toChar)
+      exponent %= 100
+      writer.write(('0' + exponent / 10).toChar)
+      exponent %= 10
+      writer.write(('0' + exponent).toChar)
     } else if (exponent >= 10) {
-      writer.write(('0' + exponent / 10).toChar);
-      exponent %= 10;
-      writer.write(('0' + exponent).toChar);
+      writer.write(('0' + exponent / 10).toChar)
+      exponent %= 10
+      writer.write(('0' + exponent).toChar)
     } else {
-      writer.write(('0' + exponent).toChar);
+      writer.write(('0' + exponent).toChar)
     }
   }
 }

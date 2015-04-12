@@ -37,13 +37,13 @@ import spire.math.UInt
 // Multiplication and Subtraction do not normalize their results.
 // DiyFp are not designed to contain special doubles (NaN and Infinity).
 object DiyFp {
-  final val kSignificandSize = 64;
+  final val kSignificandSize = 64
   final val kUint64MSB = ULong(1 << 63)
 
   def normalize(a: DiyFp): DiyFp = {
-    val result = new DiyFp(a.f, a.e);
-    result.normalize();
-    result;
+    val result = new DiyFp(a.f, a.e)
+    result.normalize()
+    result
   }
 }
 
@@ -57,7 +57,7 @@ class DiyFp(var f : ULong, var e : Int) {
   def -=(other: DiyFp): Unit = {
     assume(e == other.e)
     assume(f >= other.f)
-    f -= other.f;
+    f -= other.f
   }
 
   // Returns a - b.
@@ -77,46 +77,46 @@ class DiyFp(var f : ULong, var e : Int) {
     // significant 64 bits are only used for rounding the most significant 64
     // bits.
     val kM32 = ULong(0xFFFFFFFFL)
-    val a = f >> 32;
-    val b = f & kM32;
-    val c = other.f >> 32;
-    val d = other.f & kM32;
-    val ac = a * c;
-    val bc = b * c;
-    val ad = a * d;
-    val bd = b * d;
-    var tmp = (bd >> 32) + (ad & kM32) + (bc & kM32);
+    val a = f >> 32
+    val b = f & kM32
+    val c = other.f >> 32
+    val d = other.f & kM32
+    val ac = a * c
+    val bc = b * c
+    val ad = a * d
+    val bd = b * d
+    var tmp = (bd >> 32) + (ad & kM32) + (bc & kM32)
     // By adding 1U << 31 to tmp we round the final result.
     // Halfway cases will be round up.
-    tmp += ULong(1L << 31);
-    val result_f = ac + (ad >> 32) + (bc >> 32) + (tmp >> 32);
-    e += other.e + 64;
-    f = result_f;
+    tmp += ULong(1L << 31)
+    val result_f = ac + (ad >> 32) + (bc >> 32) + (tmp >> 32)
+    e += other.e + 64
+    f = result_f
   }
 
   def *(b: DiyFp): DiyFp = {
     val result = new DiyFp(f, e)
     result *= b
-    result;
+    result
   }
 
   def normalize(): Unit = {
-    var f = this.f;
-    var e = this.e;
-    assume(f != ULong(0));
+    var f = this.f
+    var e = this.e
+    assume(f != ULong(0))
 
     // This method is mainly called for normalizing boundaries. In general
     // boundaries need to be shifted by 10 bits. We thus optimize for this case.
     val k10MSBits = ULong(0xFFC0L << 48)
     while((f & k10MSBits) == ULong(0)) {
-      f <<= 10;
-      e -= 10;
+      f <<= 10
+      e -= 10
     }
     while((f & kUint64MSB) == ULong(0)) {
-      f <<= 1;
-      e -= 1;
+      f <<= 1
+      e -= 1
     }
-    this.f = f;
-    this.e = e;
+    this.f = f
+    this.e = e
   }
 }

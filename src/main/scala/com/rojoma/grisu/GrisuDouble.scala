@@ -50,41 +50,39 @@ private object GrisuDouble {
   // once it's encoded into a double. In almost all cases this is equal to
   // kSignificandSize. The only exceptions are denormals. They start with
   // leading zeroes and their effective significand-size is hence smaller.
-  def significandSizeForOrderOfMagnitude(order: Int): Int = {
-    if(order >= (kDenormalExponent + kSignificandSize)) {
-      return kSignificandSize;
-    }
-    if (order <= kDenormalExponent) 0
-    else order - kDenormalExponent;
+  private def significandSizeForOrderOfMagnitude(order: Int): Int = {
+    if(order >= (kDenormalExponent + kSignificandSize)) kSignificandSize
+    else if (order <= kDenormalExponent) 0
+    else order - kDenormalExponent
   }
 
-  val Infinity = Double.PositiveInfinity;
+  val Infinity = Double.PositiveInfinity
 
   val NaN = Double.NaN
 
-  def diyFpToULong(diy_fp: DiyFp): ULong = {
-    var significand = diy_fp.f;
-    var exponent = diy_fp.e;
+  private def diyFpToULong(diy_fp: DiyFp): ULong = {
+    var significand = diy_fp.f
+    var exponent = diy_fp.e
     while(significand > kHiddenBit + kSignificandMask) {
-      significand >>= 1;
-      exponent += 1;
+      significand >>= 1
+      exponent += 1
     }
 
-    if(exponent >= kMaxExponent) return kInfinity;
-    if(exponent < kDenormalExponent) return ULong(0);
+    if(exponent >= kMaxExponent) return kInfinity
+    if(exponent < kDenormalExponent) return ULong(0)
 
-    while (exponent > kDenormalExponent && (significand & kHiddenBit) == ULong(0)) {
-      significand <<= 1;
-      exponent -= 1;
+    while(exponent > kDenormalExponent && (significand & kHiddenBit) == ULong(0)) {
+      significand <<= 1
+      exponent -= 1
     }
 
     val biased_exponent =
-      if (exponent == kDenormalExponent && (significand & kHiddenBit) == ULong(0)) {
+      if(exponent == kDenormalExponent && (significand & kHiddenBit) == ULong(0)) {
         ULong(0L)
       } else {
         ULong(exponent + kExponentBias)
       }
-    (significand & kSignificandMask) | (biased_exponent << kPhysicalSignificandSize);
+    (significand & kSignificandMask) | (biased_exponent << kPhysicalSignificandSize)
   }
 }
 
@@ -102,36 +100,36 @@ private class GrisuDouble(private var value: Double, private var d64: ULong) {
   // The value encoded by this Double must be greater or equal to +0.0.
   // It must not be special (infinity, or NaN).
   def asDiyFp: DiyFp = {
-    assume(sign > 0, "sign > 0")
-    assume(!isSpecial, "!isSpecial")
-    new DiyFp(significand, exponent);
+    assume(sign > 0)
+    assume(!isSpecial)
+    new DiyFp(significand, exponent)
   }
 
   // The value encoded by this Double must be strictly greater than 0.
   def asNormalizedDiyFp: DiyFp = {
-    assume(value > 0.0, "value > 0.0")
+    assume(value > 0.0)
 
     val d64 = this.d64
     var f = ULong(0)
     var e = 0
 
     if(isDenormal) {
-      f = d64 & kSignificandMask;
-      e = kDenormalExponent;
+      f = d64 & kSignificandMask
+      e = kDenormalExponent
     } else {
-      f = (d64 & kSignificandMask) + kHiddenBit;
-      e = ((d64 & kExponentMask) >> kPhysicalSignificandSize).toInt - kExponentBias;
+      f = (d64 & kSignificandMask) + kHiddenBit
+      e = ((d64 & kExponentMask) >> kPhysicalSignificandSize).toInt - kExponentBias
     }
 
     // The current double could be a denormal.
     while((f & kHiddenBit) == ULong(0)) {
-      f <<= 1;
-      e -= 1;
+      f <<= 1
+      e -= 1
     }
     // Do the final shifts in one go.
-    f <<= DiyFp.kSignificandSize - kSignificandSize;
-    e -= DiyFp.kSignificandSize - kSignificandSize;
-    new DiyFp(f, e);
+    f <<= DiyFp.kSignificandSize - kSignificandSize
+    e -= DiyFp.kSignificandSize - kSignificandSize
+    new DiyFp(f, e)
   }
 
   // Returns the double's bit as UInt64.
@@ -145,33 +143,33 @@ private class GrisuDouble(private var value: Double, private var d64: ULong) {
   }
 
   def significand: ULong = {
-    val significand = d64 & kSignificandMask;
-    if(isDenormal) return significand;
-    significand + kHiddenBit;
+    val significand = d64 & kSignificandMask
+    if(isDenormal) return significand
+    significand + kHiddenBit
   }
 
   // Returns true if the double is a denormal.
-  def isDenormal: Boolean = (d64 & kExponentMask) == ULong(0);
+  def isDenormal: Boolean = (d64 & kExponentMask) == ULong(0)
 
   // We consider denormals not to be special.
   // Hence only Infinity and NaN are special.
-  def isSpecial: Boolean = (d64 & kExponentMask) == kExponentMask;
+  def isSpecial: Boolean = (d64 & kExponentMask) == kExponentMask
 
   def isNaN: Boolean =
     ((d64 & kExponentMask) == kExponentMask) &&
-      ((d64 & kSignificandMask) != ULong(0));
+      ((d64 & kSignificandMask) != ULong(0))
 
   def isInfinite: Boolean =
     ((d64 & kExponentMask) == kExponentMask) &&
-      ((d64 & kSignificandMask) == ULong(0));
+      ((d64 & kSignificandMask) == ULong(0))
 
-  def sign: Int = if((d64 & kSignMask) == ULong(0)) 1 else -1;
+  def sign: Int = if((d64 & kSignMask) == ULong(0)) 1 else -1
 
   // Precondition: the value encoded by this Double must be greater or equal
   // than +0.0.
   def upperBoundary: DiyFp = {
-    assume(sign > 0, "sign > 0");
-    new DiyFp(significand * ULong(2) + ULong(1), exponent - 1);
+    assume(sign > 0)
+    new DiyFp(significand * ULong(2) + ULong(1), exponent - 1)
   }
 
   // Computes the two boundaries of this.
@@ -179,37 +177,37 @@ private class GrisuDouble(private var value: Double, private var d64: ULong) {
   // exponent as m_plus.
   // Precondition: the value encoded by this Double must be greater than 0.
   def normalizedBoundaries: (DiyFp, DiyFp) = {
-    assume(value > 0.0, "value > 0.0");
+    assume(value > 0.0)
 
-    val d64 = this.d64;
-    var vF = ULong(0);
-    var vE = 0;
+    val d64 = this.d64
+    var vF = ULong(0)
+    var vE = 0
     if(isDenormal) {
-      vF = d64 & kSignificandMask;
-      vE = kDenormalExponent;
+      vF = d64 & kSignificandMask
+      vE = kDenormalExponent
     } else {
-      vF = (d64 & kSignificandMask) + kHiddenBit;
-      vE = ((d64 & kExponentMask) >> kPhysicalSignificandSize).toInt - kExponentBias;
+      vF = (d64 & kSignificandMask) + kHiddenBit
+      vE = ((d64 & kExponentMask) >> kPhysicalSignificandSize).toInt - kExponentBias
     }
 
-    var plusF = (vF << 1) + ULong(1);
-    var plusE = vE - 1;
+    var plusF = (vF << 1) + ULong(1)
+    var plusE = vE - 1
 
     // This code is manually inlined from the GrisuDouble.Normalize() method,
     // because the .NET JIT (at least the 64-bit one as of version 4) is too
     // incompetent to do it itself.
-    val k10MSBits = ULong(0xFFC0L << 48);
+    val k10MSBits = ULong(0xFFC0L << 48)
     val kUint64MSB = ULong(1L << 63)
     while((plusF & k10MSBits) == ULong(0)) {
-      plusF <<= 10;
-      plusE -= 10;
+      plusF <<= 10
+      plusE -= 10
     }
     while((plusF & kUint64MSB) == ULong(0)) {
-      plusF <<= 1;
-      plusE -= 1;
+      plusF <<= 1
+      plusE -= 1
     }
 
-    var minusF = ULong(0);
+    var minusF = ULong(0)
     var minusE = 0
 
     val significand_is_zero = (vF == kHiddenBit)
@@ -220,11 +218,11 @@ private class GrisuDouble(private var value: Double, private var d64: ULong) {
       // The only exception is for the smallest normal: the largest denormal is
       // at the same distance as its successor.
       // Note: denormals have the same exponent as the smallest normals.
-      minusF = (vF << 2) - ULong(1);
-      minusE = vE - 2;
+      minusF = (vF << 2) - ULong(1)
+      minusE = vE - 2
     } else {
-      minusF = (vF << 1) - ULong(1);
-      minusE = vE - 1;
+      minusF = (vF << 1) - ULong(1)
+      minusE = vE - 1
     }
 
     (new DiyFp(minusF << (minusE - plusE), plusE), new DiyFp(plusF, plusE))

@@ -33,10 +33,10 @@ import spire.math.ULong
 private object PowersOfTenCache {
   // Not all powers of ten are cached. The decimal exponent of two neighboring
   // cached numbers will differ by kDecimalExponentDistance.
-  final val kDecimalExponentDistance = 8;
+  private final val kDecimalExponentDistance = 8
 
-  val kMinDecimalExponent = -348;
-  val kMaxDecimalExponent = 340;
+  val kMinDecimalExponent = -348
+  val kMaxDecimalExponent = 340
 
   case class ResultBox(power: DiyFp, decimal_exponent: Int)
 
@@ -45,14 +45,14 @@ private object PowersOfTenCache {
   def cachedPowerForBinaryExponentRange(min_exponent: Int,
                                         max_exponent: Int): ResultBox =
   {
-    val kQ = DiyFp.kSignificandSize;
-    val k = Math.ceil((min_exponent + kQ - 1) * kD_1_LOG2_10);
-    val foo = kCachedPowersOffset;
-    val index = (foo + k.toInt - 1) / kDecimalExponentDistance + 1;
-    require(0 <= index && index < kCachedPowers.length);
-    val cached_power = kCachedPowers(index);
-    assert(min_exponent <= cached_power.binary_exponent);
-    assert(cached_power.binary_exponent <= max_exponent);
+    val kQ = DiyFp.kSignificandSize
+    val k = Math.ceil((min_exponent + kQ - 1) * kD_1_LOG2_10)
+    val foo = kCachedPowersOffset
+    val index = (foo + k.toInt - 1) / kDecimalExponentDistance + 1
+    require(0 <= index && index < kCachedPowers.length)
+    val cached_power = kCachedPowers(index)
+    assert(min_exponent <= cached_power.binary_exponent)
+    assert(cached_power.binary_exponent <= max_exponent)
     ResultBox(new DiyFp(cached_power.significand, cached_power.binary_exponent),
               cached_power.decimal_exponent)
   }
@@ -63,14 +63,14 @@ private object PowersOfTenCache {
   //   kMinDecimalExponent <= requested_exponent, and
   //   requested_exponent < kMaxDecimalExponent + kDecimalExponentDistance.
   def cachedPowerForDecimalExponent(requested_exponent: Int): ResultBox = {
-    require(kMinDecimalExponent <= requested_exponent);
-    require(requested_exponent < kMaxDecimalExponent + kDecimalExponentDistance);
-    val index = (requested_exponent + kCachedPowersOffset) / kDecimalExponentDistance;
-    val cached_power = kCachedPowers(index);
-    val power = new DiyFp(cached_power.significand, cached_power.binary_exponent);
-    val found_exponent = cached_power.decimal_exponent;
-    assert(found_exponent <= requested_exponent);
-    assert(requested_exponent < found_exponent + kDecimalExponentDistance);
+    require(kMinDecimalExponent <= requested_exponent)
+    require(requested_exponent < kMaxDecimalExponent + kDecimalExponentDistance)
+    val index = (requested_exponent + kCachedPowersOffset) / kDecimalExponentDistance
+    val cached_power = kCachedPowers(index)
+    val power = new DiyFp(cached_power.significand, cached_power.binary_exponent)
+    val found_exponent = cached_power.decimal_exponent
+    assert(found_exponent <= requested_exponent)
+    assert(requested_exponent < found_exponent + kDecimalExponentDistance)
     ResultBox(power, found_exponent)
   }
 
