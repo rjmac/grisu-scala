@@ -36,7 +36,7 @@ import spire.math.UInt
 // have the most significant bit of the significand set.
 // Multiplication and Subtraction do not normalize their results.
 // DiyFp are not designed to contain special doubles (NaN and Infinity).
-object DiyFp {
+private object DiyFp {
   final val kSignificandSize = 64
   final val kUint64MSB = ULong(1 << 63)
 
@@ -47,7 +47,7 @@ object DiyFp {
   }
 }
 
-class DiyFp(var f : ULong, var e : Int) {
+private class DiyFp(var f : ULong, var e : Int) {
   import DiyFp._
 
   // this = this - other.

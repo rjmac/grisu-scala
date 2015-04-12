@@ -375,9 +375,9 @@ object Grisu {
     )
   private def kSmallPowersOfTen(i: Int) = UInt(kSmallPowersOfTenS(i))
 
-  def biggestPowerTen(number: UInt,
-                      number_bits: Int,
-                      intBoxes: IntBoxes) // intBoxes is power.toInt, exponent_plus_one
+  private def biggestPowerTen(number: UInt,
+                              number_bits: Int,
+                              intBoxes: IntBoxes) // intBoxes is power.toInt, exponent_plus_one
   {
     assert(number < (UInt(1) << (number_bits + 1)))
     // 1233/4096 is approximately 1/lg(10).
@@ -411,13 +411,13 @@ object Grisu {
   // Output: returns true if the buffer is guaranteed to contain the closest
   //    representable number to the input.
   //  Modifies the generated digits in the buffer to approach (round towards) w.
-  def roundWeed(buffer: Array[Char],
-                length: Int,
-                distance_too_high_w: ULong,
-                unsafe_interval: ULong,
-                rest_ : ULong,
-                ten_kappa: ULong,
-                unit: ULong): Boolean =
+  private def roundWeed(buffer: Array[Char],
+                        length: Int,
+                        distance_too_high_w: ULong,
+                        unsafe_interval: ULong,
+                        rest_ : ULong,
+                        ten_kappa: ULong,
+                        unit: ULong): Boolean =
   {
     var rest = rest_
     val small_distance = distance_too_high_w - unit
