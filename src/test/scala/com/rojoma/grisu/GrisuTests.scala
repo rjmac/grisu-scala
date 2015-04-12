@@ -74,7 +74,7 @@ class GrisuTests extends FunSuite with MustMatchers {
     sw.start();
     cfor(0)(_ < values.length, _ + 1) { i =>
       try {
-        Grisu.toString(values(i), w);
+        Grisu.toWriter(w, values(i));
       } catch {
         case e: AssertionError =>
           println(i + " - " + values(i))

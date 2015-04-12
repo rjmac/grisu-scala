@@ -33,6 +33,7 @@ import java.io.{StringWriter, Writer}
 import spire.math.ULong
 import spire.math.UInt
 
+/** Fast `Double` to text conversion. */
 object Grisu {
   private val ts_decimal_rep = new ThreadLocal[Array[Char]] {
       override protected def initialValue = new Array[Char](kBase10MaximalLength + 1)
@@ -43,16 +44,18 @@ object Grisu {
     var b: Int = _
   }
 
+  /** Convert a `Double` to a `String`. */
   def toString(value: Double): String = {
     val sw = new StringWriter(kBase10MaximalLength + 3) // room for signs, decimal points, and exponents
-    toString(value, sw)
+    toWriter(sw, value)
     sw.toString
   }
 
-  def toString(value: Double, writer: Writer) {
+  /** Write a `Double` into a `Writer`. */
+  def toWriter(writer: Writer, value: Double) {
     if (value < 0.0) {
       writer.write('-')
-      return toString(-value, writer)
+      return toWriter(writer, -value)
     }
 
     val grisuDouble = new GrisuDouble(value)
