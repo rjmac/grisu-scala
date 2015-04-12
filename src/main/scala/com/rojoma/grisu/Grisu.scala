@@ -33,10 +33,6 @@ import java.io.{StringWriter, Writer}
 import spire.math.ULong
 import spire.math.UInt
 
-object M extends App {
-  println(Grisu.toString(1.37988403153109808E17))
-}
-
 object Grisu {
   private val ts_decimal_rep = new ThreadLocal[Array[Char]] {
       override protected def initialValue = new Array[Char](kBase10MaximalLength + 1)
