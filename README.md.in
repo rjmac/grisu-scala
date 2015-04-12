@@ -5,7 +5,7 @@ rendering floating-point numbers.
 It is published on Maven central, so setting up SBT is as simple as
 
 ```scala
-libraryDependencies += "com.rojoma" %% "grisu-scala" % "1.0.0"
+libraryDependencies += "com.rojoma" %% "grisu-scala" % "%VERSION%"
 ```
 
 While for Maven, the pom snippet is:
@@ -15,7 +15,7 @@ While for Maven, the pom snippet is:
   <dependency>
     <groupId>com.rojoma</groupId>
     <artifactId>grisu-scala_${scala.version}</artifactId>
-    <version>1.0.0</version>
+    <version>%VERSION%</version>
   </dependency>
 </dependencies>
 ```

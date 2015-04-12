@@ -14,3 +14,7 @@ libraryDependencies ++= Seq(
   )
 
 scalacOptions += "-deprecation"
+
+// Bit of a hack; regenerate README.markdown when version is changed
+// to a non-SNAPSHOT value.
+sourceGenerators in Compile <+= (baseDirectory, version, crossScalaVersions) map READMEBuilder
