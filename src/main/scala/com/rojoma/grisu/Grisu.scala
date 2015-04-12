@@ -44,7 +44,7 @@ object Grisu {
   }
 
   def toString(value: Double): String = {
-    val sw = new StringWriter
+    val sw = new StringWriter(kBase10MaximalLength)
     toString(value, sw)
     sw.toString
   }
