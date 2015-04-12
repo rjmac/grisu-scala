@@ -28,6 +28,7 @@
 
 package com.rojoma.grisu
 
+import java.io.StringWriter
 import org.scalatest.{FunSuite, MustMatchers}
 import spire.syntax.cfor._
 import scala.util.Random
@@ -53,13 +54,13 @@ class GrisuTests extends FunSuite with MustMatchers {
         (r.nextDouble() - 0.5) * Math.pow(10, r.nextDouble() * 308);
       }
 
-    var w = new java.lang.StringBuilder
+    var w = new StringWriter
 
     val sw = new Stopwatch();
     sw.start();
 
     cfor(0)(_ < values.length, _ + 1) { i =>
-      w.append(values(i))
+      w.write(values(i).toString)
     }
     sw.stop();
 
@@ -68,7 +69,7 @@ class GrisuTests extends FunSuite with MustMatchers {
     if (values.length < 100)
       println(w.toString);
 
-    w = new java.lang.StringBuilder
+    w = new StringWriter
 
     sw.start();
     cfor(0)(_ < values.length, _ + 1) { i =>

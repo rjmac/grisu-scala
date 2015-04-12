@@ -28,6 +28,8 @@
 
 package com.rojoma.grisu
 
+import java.io.{StringWriter, Writer}
+
 import spire.math.ULong
 import spire.math.UInt
 
@@ -46,14 +48,14 @@ object Grisu {
   }
 
   def toString(value: Double): String = {
-    val sb = new java.lang.StringBuilder
-    toString(value, sb)
-    sb.toString
+    val sw = new StringWriter
+    toString(value, sw)
+    sw.toString
   }
 
-  def toString(value: Double, writer: java.lang.StringBuilder) {
+  def toString(value: Double, writer: Writer) {
     if (value < 0.0) {
-      writer.append('-');
+      writer.write('-');
       return toString(-value, writer)
     }
 
@@ -66,7 +68,7 @@ object Grisu {
 
     val intBoxes = new IntBoxes
     if (!doubleToShortestAscii(grisuDouble, decimal_rep, intBoxes)) {
-      writer.append(value.toString)
+      writer.write(value.toString)
       return;
     }
     val decimal_rep_length = intBoxes.a
@@ -112,17 +114,17 @@ object Grisu {
   final val exponent_character = 'e';
 
   private def handleSpecialValues(double_inspect: GrisuDouble,
-                                  writer: java.lang.StringBuilder): Unit =
+                                  writer: Writer): Unit =
   {
     if(double_inspect.isInfinite) {
       if(double_inspect.toDouble < 0) {
-        writer.append('-');
+        writer.write('-');
       }
-      writer.append(infinity_symbol);
+      writer.write(infinity_symbol);
       return;
     }
     if(double_inspect.isNaN) {
-      writer.append(nan_symbol);
+      writer.write(nan_symbol);
       return;
     }
   }
@@ -537,75 +539,75 @@ object Grisu {
                                           length: Int,
                                           decimal_point: Int,
                                           digits_after_point: Int,
-                                          writer: java.lang.StringBuilder): Unit =
+                                          writer: Writer): Unit =
   {
     // Create a representation that is padded with zeros if needed.
     if (decimal_point <= 0) {
       // "0.00000decimal_rep".
-      writer.append('0');
+      writer.write('0');
       if (digits_after_point > 0) {
-        writer.append('.');
-        writer.append("0" * (-decimal_point));
+        writer.write('.');
+        writer.write("0" * (-decimal_point));
         assert(length <= digits_after_point - (-decimal_point));
-        writer.append(decimal_digits, 0, length);
+        writer.write(decimal_digits, 0, length);
         val remaining_digits = digits_after_point - (-decimal_point) - length;
-        writer.append("0" * remaining_digits)
+        writer.write("0" * remaining_digits)
       }
     } else if (decimal_point >= length) {
       // "decimal_rep0000.00000" or "decimal_rep.0000"
-      writer.append(decimal_digits, 0, length);
-      writer.append("0" * (decimal_point - length));
+      writer.write(decimal_digits, 0, length);
+      writer.write("0" * (decimal_point - length));
       if (digits_after_point > 0) {
-        writer.append('.');
-        writer.append("0" * digits_after_point)
+        writer.write('.');
+        writer.write("0" * digits_after_point)
       }
     } else {
       // "decima.l_rep000"
       assert(digits_after_point > 0);
-      writer.append(decimal_digits, 0, decimal_point);
-      writer.append('.');
+      writer.write(decimal_digits, 0, decimal_point);
+      writer.write('.');
       assert(length - decimal_point <= digits_after_point);
-      writer.append(decimal_digits, decimal_point,
+      writer.write(decimal_digits, decimal_point,
                     length - decimal_point);
       val remaining_digits = digits_after_point - (length - decimal_point);
-      writer.append("0" * remaining_digits);
+      writer.write("0" * remaining_digits);
     }
   }
 
   private def createExponentialRepresentation(decimal_digits: Array[Char],
                                               length: Int,
                                               exponent_ : Int,
-                                              writer: java.lang.StringBuilder): Unit =
+                                              writer: Writer): Unit =
   {
     var exponent = exponent_
     assert(length != 0);
-    writer.append(decimal_digits(0));
+    writer.write(decimal_digits(0));
     if (length != 1)
     {
-      writer.append('.');
-      writer.append(decimal_digits, 1, length - 1);
+      writer.write('.');
+      writer.write(decimal_digits, 1, length - 1);
     }
-    writer.append(exponent_character);
+    writer.write(exponent_character);
     if (exponent < 0) {
-      writer.append('-');
+      writer.write('-');
       exponent = -exponent;
     } else if (exponent == 0) {
-      writer.append('0');
+      writer.write('0');
       return;
     }
     assert(exponent < 10000);
     if (exponent >= 100) {
-      writer.append(('0' + exponent / 100).toChar);
+      writer.write(('0' + exponent / 100).toChar);
       exponent %= 100;
-      writer.append(('0' + exponent / 10).toChar);
+      writer.write(('0' + exponent / 10).toChar);
       exponent %= 10;
-      writer.append(('0' + exponent).toChar);
+      writer.write(('0' + exponent).toChar);
     } else if (exponent >= 10) {
-      writer.append(('0' + exponent / 10).toChar);
+      writer.write(('0' + exponent / 10).toChar);
       exponent %= 10;
-      writer.append(('0' + exponent).toChar);
+      writer.write(('0' + exponent).toChar);
     } else {
-      writer.append(exponent);
+      writer.write(('0' + exponent).toChar);
     }
   }
 }
