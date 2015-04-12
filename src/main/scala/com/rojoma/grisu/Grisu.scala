@@ -44,7 +44,7 @@ object Grisu {
   }
 
   def toString(value: Double): String = {
-    val sw = new StringWriter(kBase10MaximalLength)
+    val sw = new StringWriter(kBase10MaximalLength + 3) // room for signs, decimal points, and exponents
     toString(value, sw)
     sw.toString
   }
