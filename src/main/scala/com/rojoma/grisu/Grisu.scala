@@ -30,9 +30,6 @@ package com.rojoma.grisu
 
 import java.io.{StringWriter, Writer}
 
-import spire.math.ULong
-import spire.math.UInt
-
 /** Fast `Double` to text conversion. */
 object Grisu {
   private val ts_decimal_rep = new ThreadLocal[Array[Char]] {
@@ -52,7 +49,7 @@ object Grisu {
   }
 
   /** Write a `Double` into a `Writer`. */
-  def toWriter(writer: Writer, value: Double) {
+  def toWriter(writer: Writer, value: Double): Unit = {
     if (value < 0.0) {
       writer.write('-')
       return toWriter(writer, -value)
@@ -381,6 +378,7 @@ object Grisu {
   private def biggestPowerTen(number: UInt,
                               number_bits: Int,
                               intBoxes: IntBoxes) // intBoxes is power.toInt, exponent_plus_one
+    : Unit =
   {
     assert(number < (UInt(1) << (number_bits + 1)))
     // 1233/4096 is approximately 1/lg(10).

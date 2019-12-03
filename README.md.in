@@ -20,4 +20,4 @@ While for Maven, the pom snippet is:
 </dependencies>
 ```
 
-grisu-scala is published for Scala version 2.10 and 2.11.
+grisu-scala is published for Scala version 2.10, 2.11, 2.12, and 2.13.

@@ -28,8 +28,6 @@
 
 package com.rojoma.grisu
 
-import spire.math.ULong
-
 private object GrisuDouble {
   final val kSignMask = ULong(1L << 63)
   final val kExponentMask = ULong(0x7FF0000000000000L)

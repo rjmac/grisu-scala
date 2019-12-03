@@ -28,8 +28,6 @@
 
 package com.rojoma.grisu
 
-import spire.math.ULong
-
 private object PowersOfTenCache {
   // Not all powers of ten are cached. The decimal exponent of two neighboring
   // cached numbers will differ by kDecimalExponentDistance.

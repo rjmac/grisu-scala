@@ -30,15 +30,14 @@ package com.rojoma.grisu
 
 import java.io.StringWriter
 import org.scalatest.{FunSuite, MustMatchers}
-import spire.syntax.cfor._
 import scala.util.Random
 
 class GrisuTests extends FunSuite with MustMatchers {
   private class Stopwatch {
     private var a = 0L
     private var b = 0L
-    def start() { a = System.currentTimeMillis() }
-    def stop() { b = System.currentTimeMillis() }
+    def start(): Unit = { a = System.currentTimeMillis() }
+    def stop(): Unit = { b = System.currentTimeMillis() }
     def elapsedMilliseconds = b - a
   }
 
@@ -48,7 +47,7 @@ class GrisuTests extends FunSuite with MustMatchers {
     doPerf();
   }
 
-  private def doPerf() {
+  private def doPerf(): Unit = {
     val r = new Random(1);
     val values = Array.fill(1000000) {
         (r.nextDouble() - 0.5) * Math.pow(10, r.nextDouble() * 308);
@@ -59,8 +58,10 @@ class GrisuTests extends FunSuite with MustMatchers {
     val sw = new Stopwatch();
     sw.start();
 
-    cfor(0)(_ < values.length, _ + 1) { i =>
+    var i = 0
+    while(i < values.length) {
       w.write(values(i).toString)
+      i += 1
     }
     sw.stop();
 
@@ -72,14 +73,16 @@ class GrisuTests extends FunSuite with MustMatchers {
     w = new StringWriter
 
     sw.start();
-    cfor(0)(_ < values.length, _ + 1) { i =>
+    i = 0
+    while(i < values.length) {
       try {
         Grisu.toWriter(w, values(i));
       } catch {
         case e: AssertionError =>
-          println(i + " - " + values(i))
+          println(s"$i - ${values(i)}")
           throw e
       }
+      i += 1
     }
     sw.stop();
     println("grisu length: " + w.toString.length);
@@ -121,7 +124,7 @@ class GrisuTests extends FunSuite with MustMatchers {
     checkDoubleToStringEquals("3.5844466002796428E298", 3.5844466002796428e+298);
   }
 
-  def checkDoubleToStringEquals(expected: String, value: Double) {
+  def checkDoubleToStringEquals(expected: String, value: Double): Unit = {
     try {
       Grisu.toString(value) must equal (expected)
     } catch {
